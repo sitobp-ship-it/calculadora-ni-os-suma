@@ -1,5 +1,5 @@
 // GET /api/users -> lista resumida de jugadores (para la pantalla de selección)
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Método no permitido' });
     return;
@@ -41,4 +41,4 @@ export default async function handler(req, res) {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-}
+};

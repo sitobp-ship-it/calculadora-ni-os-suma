@@ -1,7 +1,7 @@
 // GET  /api/user?id=rec... -> registro completo de un jugador
 // POST /api/user            -> crea un jugador nuevo   body: { fields: {...} }
 // PATCH /api/user?id=rec... -> actualiza un jugador     body: { fields: {...} }
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   const token = process.env.AIRTABLE_TOKEN;
   const base = process.env.AIRTABLE_BASE_ID;
   const table = 'Usuarios';
@@ -75,4 +75,4 @@ export default async function handler(req, res) {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-}
+};
