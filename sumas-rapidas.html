@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Sumas Rápidas</title>
+<style>
+  :root{
+    --bg:#EAF4FF;
+    --card:#FFFFFF;
+    --primary:#FF8A5B;
+    --primary-dark:#E5713F;
+    --accent:#8B5CF6;
+    --good:#3FC97A;
+    --good-bg:#E4F9EC;
+    --warn:#FFC145;
+    --bad:#FF6B6B;
+    --text:#2E3A46;
+    --muted:#8A97A6;
+    --lock:#C7D2DD;
+    --radius:22px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system, "Segoe UI", "Segoe UI Rounded", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, #FFE7CF 0%, transparent 45%),
+      radial-gradient(circle at 90% 85%, #DDEBFF 0%, transparent 50%),
+      var(--bg);
+    color:var(--text);
+    min-height:100%;
+    display:flex;
+    justify-content:center;
+    overscroll-behavior:none;
+    user-select:none;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    padding:20px 18px 28px;
+    display:flex;
+    flex-direction:column;
+  }
+  .screen{display:none; flex:1; flex-direction:column;}
+  .screen.active{display:flex;}
+  h1{font-size:30px; margin:6px 0 2px; font-weight:800;}
+  h2{font-size:22px; margin:0 0 4px; font-weight:800;}
+  p{line-height:1.4;}
+  .muted{color:var(--muted); font-size:15px; margin-top:0;}
+  .btn{
+    border:none;
+    border-radius:18px;
+    padding:16px 20px;
+    font-size:18px;
+    font-weight:800;
+    cursor:pointer;
+    color:#fff;
+    background:var(--primary);
+    box-shadow:0 6px 0 var(--primary-dark);
+    transition:transform .05s ease;
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 var(--primary-dark);}
+  .btn.secondary{
+    background:#fff;
+    color:var(--primary-dark);
+    box-shadow:0 6px 0 #E9CDBE;
+    border:2px solid #FFDCC6;
+  }
+  .btn.accent{background:var(--accent); box-shadow:0 6px 0 #6B3FD1;}
+  .btn.ghost{
+    background:transparent; color:var(--muted); box-shadow:none;
+    font-weight:700; padding:10px;
+  }
+  .btn:disabled{opacity:.45; cursor:default; box-shadow:none;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn-row .btn{flex:1;}
+
+  /* HOME */
+  .home-header{text-align:center; margin-top:10px; margin-bottom:18px;}
+  .mascot{font-size:52px; line-height:1;}
+  .home-actions{display:flex; flex-direction:column; gap:12px; margin-top:auto;}
+  .top-icons{display:flex; justify-content:flex-end; gap:8px; margin-bottom:4px;}
+  .icon-btn{
+    background:#fff; border:2px solid #E3ECF4; border-radius:14px;
+    width:44px; height:44px; font-size:20px; display:flex; align-items:center;
+    justify-content:center; cursor:pointer;
+  }
+
+  /* PYRAMID */
+  .pyramid{display:flex; flex-direction:column; align-items:center; gap:8px; margin:14px 0;}
+  .pyr-row{display:flex; gap:8px;}
+  .pyr-block{
+    width:56px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:15px; color:#fff;
+    background:var(--lock); cursor:default;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+  }
+  .pyr-block.unlocked{background:var(--primary); cursor:pointer; box-shadow:0 4px 0 var(--primary-dark);}
+  .pyr-block.done{background:var(--good); box-shadow:0 4px 0 #299B57;}
+  .pyr-block:active{transform:translateY(3px);}
+
+  /* CARD generic */
+  .card{
+    background:var(--card); border-radius:var(--radius); padding:20px;
+    box-shadow:0 6px 18px rgba(46,58,70,.08);
+  }
+
+  /* SETTINGS */
+  .option-list{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+  .option{
+    display:flex; align-items:center; justify-content:space-between;
+    background:#fff; border:2px solid #E3ECF4; border-radius:16px;
+    padding:14px 16px; font-weight:700; cursor:pointer;
+  }
+  .option.selected{border-color:var(--primary); background:#FFF3EC;}
+  .option .tag{color:var(--muted); font-weight:600; font-size:14px;}
+
+  /* PREVIEW */
+  .example{
+    background:#fff; border-radius:18px; padding:14px 16px; margin-bottom:12px;
+    display:flex; gap:12px; align-items:center;
+  }
+  .example .sum-line{font-size:22px; font-weight:800; white-space:nowrap;}
+  .example .tip{font-size:14.5px; color:var(--muted); margin:4px 0 0;}
+  .dots{display:flex; flex-wrap:wrap; gap:3px; max-width:70px;}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--accent);}
+  .dot.b{background:var(--primary);}
+  .dots.zero{color:var(--muted); font-weight:800; font-size:14px; width:70px;}
+  .family-eqs{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .eq-pill{
+    background:#F3F0FF; color:var(--accent); font-weight:800; font-size:14px;
+    padding:6px 9px; border-radius:12px; white-space:nowrap;
+  }
+
+  /* PLAY */
+  .play-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .progress-dots{display:flex; gap:5px;}
+  .p-dot{width:9px; height:9px; border-radius:50%; background:#DCE6EF;}
+  .p-dot.filled{background:var(--good);}
+  .p-dot.current{background:var(--primary);}
+  .streak-pill{
+    background:#FFF3EC; color:var(--primary-dark); font-weight:800; font-size:13px;
+    padding:5px 10px; border-radius:20px;
+  }
+  .timerbar-wrap{height:8px; background:#E3ECF4; border-radius:6px; overflow:hidden; margin-bottom:18px;}
+  .timerbar{height:100%; background:var(--warn); width:100%; transition:width .1s linear;}
+  .question-card{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:6px;
+  }
+  .sum-display{font-size:52px; font-weight:800; letter-spacing:1px;}
+  .speak-btn{
+    margin-top:6px; background:#fff; border:2px solid #E3ECF4; border-radius:16px;
+    padding:8px 14px; font-size:14px; font-weight:700; color:var(--muted); cursor:pointer;
+  }
+  .answer-box{
+    margin-top:22px; min-width:110px; min-height:56px; background:#fff;
+    border:3px solid #E3ECF4; border-radius:16px; font-size:32px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; padding:0 14px;
+  }
+  .answer-box.correct{border-color:var(--good); background:var(--good-bg); color:#1E8A4E;}
+  .answer-box.wrong{border-color:var(--bad); background:#FFECEC; color:#C43E3E;}
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px;}
+  .key{
+    background:#fff; border:2px solid #E3ECF4; border-radius:16px; font-size:22px;
+    font-weight:800; padding:16px 0; cursor:pointer;
+  }
+  .key:active{background:#F0F5FA;}
+  .key.check{background:var(--good); color:#fff; border-color:var(--good);}
+  .key.back{color:var(--muted);}
+
+  /* LEVEL COMPLETE */
+  .stars{font-size:44px; letter-spacing:6px; text-align:center; margin:14px 0;}
+  .result-msg{text-align:center; font-size:16px; color:var(--muted);}
+
+  /* MAP */
+  .map-legend{display:flex; gap:16px; font-size:13px; color:var(--muted); margin:10px 0 14px;}
+  .legend-dot{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:5px;}
+  .map-grid{display:grid; grid-template-columns:repeat(10, 1fr); gap:3px;}
+  .map-cell{
+    aspect-ratio:1; border-radius:5px; background:#EAF0F5; display:flex;
+    align-items:center; justify-content:center; font-size:9px; color:var(--muted); font-weight:700;
+  }
+  .map-cell.head{background:transparent; color:var(--text); font-size:11px;}
+  .map-cell.mastered{background:var(--good); color:#fff;}
+  .map-cell.progress{background:var(--warn); color:#fff;}
+  .map-wrap{overflow-x:auto; padding-bottom:6px;}
+
+  .center-col{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="top-icons">
+      <div class="icon-btn" id="btn-sound">🔊</div>
+      <div class="icon-btn" id="btn-settings">⏱️</div>
+    </div>
+    <div class="home-header">
+      <div class="mascot">🦋</div>
+      <h1>Sumas Rápidas</h1>
+      <p class="muted">Elige un nivel y a jugar</p>
+    </div>
+    <div id="pyramid" class="pyramid"></div>
+    <div class="home-actions">
+      <button class="btn" id="btn-play">Jugar ▶</button>
+      <button class="btn secondary" id="btn-map">Ver mi mapa de sumas 🗺️</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="screen-settings">
+    <h2>⏱️ Tiempo por pregunta</h2>
+    <p class="muted">Cuánto tiempo tiene para responder cada suma</p>
+    <div class="option-list" id="time-options"></div>
+    <div style="margin-top:auto;">
+      <button class="btn" id="btn-settings-done">Guardar</button>
+    </div>
+  </section>
+
+  <!-- LEVEL PREVIEW -->
+  <section class="screen" id="screen-preview">
+    <button class="btn ghost" id="btn-preview-back" style="align-self:flex-start;">← Volver</button>
+    <h2 id="preview-title"></h2>
+    <p class="muted" id="preview-desc"></p>
+    <div id="preview-examples" style="margin-top:8px;"></div>
+    <div style="margin-top:auto;">
+      <button class="btn" id="btn-start-level">¡Empezar nivel! 🚀</button>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section class="screen" id="screen-play">
+    <div class="play-top">
+      <div class="progress-dots" id="progress-dots"></div>
+      <div class="streak-pill" id="streak-pill">racha 0 🔥</div>
+    </div>
+    <div class="timerbar-wrap" id="timerbar-wrap" style="display:none;">
+      <div class="timerbar" id="timerbar"></div>
+    </div>
+    <div class="question-card">
+      <div class="sum-display" id="sum-display">2 + 3</div>
+      <div class="speak-btn" id="btn-speak">🔊 Escuchar</div>
+      <div class="answer-box" id="answer-box">&nbsp;</div>
+    </div>
+    <div class="keypad" id="keypad"></div>
+  </section>
+
+  <!-- LEVEL COMPLETE -->
+  <section class="screen" id="screen-complete">
+    <div class="center-col" style="margin-top:40px;">
+      <div class="mascot">🏆</div>
+      <h2 id="complete-title">¡Nivel completado!</h2>
+      <div class="stars" id="complete-stars"></div>
+      <p class="result-msg" id="complete-msg"></p>
+    </div>
+    <div class="home-actions">
+      <button class="btn" id="btn-next-level">Siguiente nivel ▶</button>
+      <button class="btn secondary" id="btn-retry-level">Repetir nivel 🔁</button>
+      <button class="btn ghost" id="btn-complete-home">Volver al inicio</button>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section class="screen" id="screen-map">
+    <button class="btn ghost" id="btn-map-back" style="align-self:flex-start;">← Volver</button>
+    <h2>🗺️ Mapa de sumas</h2>
+    <div class="map-legend">
+      <span><span class="legend-dot" style="background:var(--good);"></span>Dominada</span>
+      <span><span class="legend-dot" style="background:var(--warn);"></span>En camino</span>
+      <span><span class="legend-dot" style="background:#EAF0F5;"></span>Pendiente</span>
+    </div>
+    <div class="map-wrap">
+      <div class="map-grid" id="map-grid"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- DATOS DE NIVELES ---------- */
+  // Grupos progresivos: cada grupo tiene un resultado máximo y un número
+  // de niveles (repeticiones) para practicarlo antes de subir de grupo.
+  // Nota: con sumandos de un solo dígito (0-9) el resultado máximo posible
+  // es 9+9=18, así que el último grupo llega hasta 18 en vez de 20.
+  const GROUPS = [
+    {maxResult:3,  count:1},
+    {maxResult:6,  count:2},
+    {maxResult:9,  count:3},
+    {maxResult:12, count:4},
+    {maxResult:15, count:5},
+    {maxResult:18, count:6}
+  ];
+  const LEVELS = [];
+  (function buildLevels(){
+    let id = 1;
+    GROUPS.forEach((g, gi)=>{
+      const prevMax = gi===0 ? 0 : GROUPS[gi-1].maxResult;
+      const allowZero = gi===0; // solo el primer grupo enseña "sumar con el 0"
+      for(let j=1; j<=g.count; j++){
+        LEVELS.push({
+          id: id++,
+          groupIndex: gi,
+          maxResult: g.maxResult,
+          prevMax: prevMax,
+          indexInGroup: j,
+          countInGroup: g.count,
+          allowZero: allowZero,
+          name: "Nivel " + (id-1),
+          title: "Resultados hasta " + g.maxResult + (g.count>1 ? " ("+j+"/"+g.count+")" : ""),
+          filter: (function(max, lo){
+            return (a,b)=> a>=lo && b>=lo && a+b>=1 && a+b<=max;
+          })(g.maxResult, allowZero?0:1)
+        });
+      }
+    });
+  })();
+  const QUESTIONS_PER_LEVEL = 8;
+  const TIME_OPTIONS = [
+    {v:0, label:"Sin límite", tag:"Piensa con calma"},
+    {v:15, label:"15 segundos", tag:"Tranquilo"},
+    {v:10, label:"10 segundos", tag:"Normal"},
+    {v:5, label:"5 segundos", tag:"¡Rápido!"}
+  ];
+
+  /* ---------- ESTADO GUARDADO ---------- */
+  const STORAGE_KEY = "sumasRapidas_v1";
+  function defaultData(){
+    return { timeLimit:10, sound:true, levels:{}, pairs:{} };
+  }
+  let data = loadData();
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultData();
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultData(), parsed);
+    }catch(e){ return defaultData(); }
+  }
+  function saveData(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  }
+  function pairKey(a,b){ const lo=Math.min(a,b), hi=Math.max(a,b); return lo+"-"+hi; }
+  function getPair(a,b){
+    const k = pairKey(a,b);
+    if(!data.pairs[k]) data.pairs[k] = {correct:0, streak:0};
+    return data.pairs[k];
+  }
+  function isMastered(a,b){
+    const p = data.pairs[pairKey(a,b)];
+    return !!p && p.streak>=2;
+  }
+  function isStarted(a,b){
+    const p = data.pairs[pairKey(a,b)];
+    return !!p && p.correct>0 && !isMastered(a,b);
+  }
+  function isLevelUnlocked(id){
+    if(id===1) return true;
+    const prev = data.levels[id-1];
+    return !!prev && prev.completed;
+  }
+
+  /* ---------- NAVEGACIÓN ---------- */
+  function show(id){
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    window.scrollTo(0,0);
+  }
+
+  /* ---------- VOZ ---------- */
+  let spanishVoice = null;
+  function pickVoice(){
+    if(!window.speechSynthesis) return;
+    const voices = speechSynthesis.getVoices();
+    spanishVoice = voices.find(v=>v.lang && v.lang.toLowerCase().startsWith("es")) || null;
+  }
+  if(window.speechSynthesis){
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+  function speak(text){
+    if(!data.sound || !window.speechSynthesis) return;
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "es-ES";
+      if(spanishVoice) u.voice = spanishVoice;
+      u.rate = 0.95;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function sumToWords(a,b){
+    return a + " más " + b;
+  }
+
+  /* ---------- HOME / PIRÁMIDE ---------- */
+  function renderHome(){
+    document.getElementById("btn-sound").textContent = data.sound ? "🔊" : "🔇";
+    const pyr = document.getElementById("pyramid");
+    pyr.innerHTML = "";
+    GROUPS.forEach((g, gi)=>{
+      const groupLevels = LEVELS.filter(l=>l.groupIndex===gi);
+      const row = document.createElement("div");
+      row.className = "pyr-row";
+      const blockSize = Math.max(30, Math.min(52, Math.floor((330-(g.count-1)*8)/g.count)));
+      groupLevels.forEach(lvl=>{
+        const block = document.createElement("div");
+        const unlocked = isLevelUnlocked(lvl.id);
+        const done = data.levels[lvl.id] && data.levels[lvl.id].completed;
+        block.className = "pyr-block" + (unlocked?" unlocked":"") + (done?" done":"");
+        block.style.width = blockSize+"px";
+        block.style.height = Math.round(blockSize*0.8)+"px";
+        block.style.fontSize = Math.max(11, Math.round(blockSize*0.28))+"px";
+        block.title = "Nivel "+lvl.id+" · hasta "+g.maxResult;
+        block.textContent = done ? "★".repeat(data.levels[lvl.id].stars||1) : (unlocked ? lvl.indexInGroup : "🔒");
+        if(unlocked){
+          block.addEventListener("click", ()=> openPreview(lvl.id));
+        }
+        row.appendChild(block);
+      });
+      pyr.appendChild(row);
+    });
+  }
+  document.getElementById("btn-play").addEventListener("click", ()=>{
+    const next = LEVELS.find(l=> isLevelUnlocked(l.id) && !(data.levels[l.id] && data.levels[l.id].completed));
+    const target = next || LEVELS[0];
+    openPreview(target.id);
+  });
+  document.getElementById("btn-map").addEventListener("click", ()=>{ renderMap(); show("screen-map"); });
+  document.getElementById("btn-map-back").addEventListener("click", ()=>{ renderHome(); show("screen-home"); });
+  document.getElementById("btn-sound").addEventListener("click", ()=>{
+    data.sound = !data.sound; saveData(); renderHome();
+  });
+
+  /* ---------- SETTINGS (TIEMPO) ---------- */
+  function renderSettings(){
+    const wrap = document.getElementById("time-options");
+    wrap.innerHTML = "";
+    TIME_OPTIONS.forEach(opt=>{
+      const div = document.createElement("div");
+      div.className = "option" + (data.timeLimit===opt.v ? " selected":"");
+      div.innerHTML = "<span>"+opt.label+"</span><span class='tag'>"+opt.tag+"</span>";
+      div.addEventListener("click", ()=>{
+        data.timeLimit = opt.v; saveData(); renderSettings();
+      });
+      wrap.appendChild(div);
+    });
+  }
+  document.getElementById("btn-settings").addEventListener("click", ()=>{ renderSettings(); show("screen-settings"); });
+  document.getElementById("btn-settings-done").addEventListener("click", ()=>{ renderHome(); show("screen-home"); });
+
+  /* ---------- PREVIEW DE NIVEL (familias de sumas) ---------- */
+  let currentLevel = null;
+  function renderDots(n, cls){
+    if(n===0) return "<div class='dots zero'>0</div>";
+    let html = "<div class='dots'>";
+    for(let i=0;i<n;i++) html += "<span class='dot "+cls+"'></span>";
+    html += "</div>";
+    return html;
+  }
+  // Todas las parejas (a,b) con a<=b, dentro del rango de sumandos permitido,
+  // cuyo resultado es exactamente "result".
+  function familiesFor(result, allowZero){
+    const lo = allowZero ? 0 : 1;
+    const list = [];
+    for(let a=lo; a<=9; a++){
+      const b = result - a;
+      if(b<lo || b>9) continue;
+      if(a>b) continue;
+      list.push([a,b]);
+    }
+    return list;
+  }
+  function newResultsForLevel(level){
+    const arr = [];
+    for(let r=level.prevMax+1; r<=level.maxResult; r++) arr.push(r);
+    return arr;
+  }
+  function renderFamilyCard(result, allowZero){
+    const pairs = familiesFor(result, allowZero);
+    const div = document.createElement("div");
+    div.className = "example";
+    let eqsHtml = "<div class='family-eqs'>";
+    pairs.forEach(([a,b])=>{
+      eqsHtml += "<span class='eq-pill'>"+a+" + "+b+" = "+result+"</span>";
+      if(a!==b) eqsHtml += "<span class='eq-pill'>"+b+" + "+a+" = "+result+"</span>";
+    });
+    eqsHtml += "</div>";
+    const canonical = pairs[0] || [0,result];
+    const dotsHtml = (result<=10)
+      ? "<div>"+renderDots(canonical[0],"a")+renderDots(canonical[1],"b")+"</div>"
+      : "";
+    div.innerHTML =
+      dotsHtml +
+      "<div style='flex:1;'><div class='sum-line'>Familia del "+result+"</div>"+
+      eqsHtml+"</div>";
+    return div;
+  }
+  function openPreview(levelId){
+    currentLevel = LEVELS.find(l=>l.id===levelId);
+    const isFirstOfGroup = currentLevel.indexInGroup===1;
+    const newResults = newResultsForLevel(currentLevel);
+    document.getElementById("preview-title").textContent = currentLevel.name;
+    document.getElementById("preview-desc").textContent = isFirstOfGroup
+      ? "Vas a aprender las sumas que dan como resultado "+newResults.join(", ")+"."
+      : "Practica otra vez las sumas hasta "+currentLevel.maxResult+" (ronda "+currentLevel.indexInGroup+" de "+currentLevel.countInGroup+").";
+    const wrap = document.getElementById("preview-examples");
+    wrap.innerHTML = "";
+    const resultsToTeach = isFirstOfGroup ? newResults : [newResults[newResults.length-1]];
+    resultsToTeach.forEach(r=> wrap.appendChild(renderFamilyCard(r, currentLevel.allowZero)));
+    const tip = document.createElement("p");
+    tip.className = "muted";
+    tip.style.textAlign = "center";
+    tip.textContent = "💡 No importa el orden: a + b es siempre igual que b + a.";
+    wrap.appendChild(tip);
+    show("screen-preview");
+  }
+  document.getElementById("btn-preview-back").addEventListener("click", ()=>{ renderHome(); show("screen-home"); });
+  document.getElementById("btn-start-level").addEventListener("click", ()=> startLevel(currentLevel.id));
+
+  /* ---------- JUEGO ---------- */
+  let play = null; // {questions, qIndex, correctCount, streak, timerId, timeLeft, answer}
+
+  function buildPool(level){
+    const pool = [];
+    for(let a=1;a<=9;a++){
+      for(let b=1;b<=9;b++){
+        if(level.filter(a,b)) pool.push({a,b});
+      }
+    }
+    return pool;
+  }
+  function shuffle(arr){
+    const out = arr.slice();
+    for(let i=out.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [out[i],out[j]] = [out[j],out[i]];
+    }
+    return out;
+  }
+  function startLevel(levelId){
+    currentLevel = LEVELS.find(l=>l.id===levelId);
+    const pool = shuffle(buildPool(currentLevel));
+    const qs = [];
+    for(let i=0;i<QUESTIONS_PER_LEVEL;i++) qs.push(pool[i % pool.length]);
+    play = { questions:qs, qIndex:0, correctCount:0, streak:0, timerId:null, timeLeft:0, answer:"" };
+    document.getElementById("timerbar-wrap").style.display = data.timeLimit>0 ? "block" : "none";
+    buildKeypad();
+    show("screen-play");
+    renderQuestion();
+  }
+
+  function renderProgressDots(){
+    const wrap = document.getElementById("progress-dots");
+    wrap.innerHTML = "";
+    for(let i=0;i<play.questions.length;i++){
+      const d = document.createElement("div");
+      d.className = "p-dot" + (i<play.qIndex?" filled":"") + (i===play.qIndex?" current":"");
+      wrap.appendChild(d);
+    }
+  }
+  function renderQuestion(){
+    if(play.qIndex >= play.questions.length){ finishLevel(); return; }
+    play.answer = "";
+    const q = play.questions[play.qIndex];
+    document.getElementById("sum-display").textContent = q.a+" + "+q.b;
+    const box = document.getElementById("answer-box");
+    box.textContent = "\u00A0";
+    box.className = "answer-box";
+    document.getElementById("streak-pill").textContent = "racha "+play.streak+" 🔥";
+    renderProgressDots();
+    speak(sumToWords(q.a,q.b));
+    startTimer();
+  }
+  document.getElementById("btn-speak").addEventListener("click", ()=>{
+    const q = play.questions[play.qIndex];
+    speak(sumToWords(q.a,q.b));
+  });
+
+  function startTimer(){
+    clearInterval(play.timerId);
+    if(data.timeLimit<=0) return;
+    play.timeLeft = data.timeLimit*1000;
+    const bar = document.getElementById("timerbar");
+    bar.style.width = "100%";
+    const total = play.timeLeft;
+    const tickMs = 100;
+    play.timerId = setInterval(()=>{
+      play.timeLeft -= tickMs;
+      const pct = Math.max(0, (play.timeLeft/total)*100);
+      bar.style.width = pct+"%";
+      if(play.timeLeft<=0){
+        clearInterval(play.timerId);
+        handleAnswer(false, true);
+      }
+    }, tickMs);
+  }
+
+  function buildKeypad(){
+    const kp = document.getElementById("keypad");
+    kp.innerHTML = "";
+    const layout = ["1","2","3","4","5","6","7","8","9","⌫","0","✓"];
+    layout.forEach(k=>{
+      const b = document.createElement("div");
+      b.className = "key" + (k==="✓" ? " check":"") + (k==="⌫" ? " back":"");
+      b.textContent = k;
+      b.addEventListener("click", ()=> handleKey(k));
+      kp.appendChild(b);
+    });
+  }
+  function handleKey(k){
+    if(k==="⌫"){ play.answer = play.answer.slice(0,-1); }
+    else if(k==="✓"){ submitAnswer(); return; }
+    else { if(play.answer.length<2) play.answer += k; }
+    document.getElementById("answer-box").textContent = play.answer.length? play.answer : "\u00A0";
+  }
+  document.addEventListener("keydown", (e)=>{
+    if(!document.getElementById("screen-play").classList.contains("active")) return;
+    if(e.key>="0" && e.key<="9") handleKey(e.key);
+    else if(e.key==="Backspace") handleKey("⌫");
+    else if(e.key==="Enter") handleKey("✓");
+  });
+
+  function submitAnswer(){
+    if(play.answer==="") return;
+    const q = play.questions[play.qIndex];
+    const correct = parseInt(play.answer,10) === (q.a+q.b);
+    handleAnswer(correct, false);
+  }
+  function handleAnswer(correct, timedOut){
+    clearInterval(play.timerId);
+    const q = play.questions[play.qIndex];
+    const box = document.getElementById("answer-box");
+    const p = getPair(q.a,q.b);
+    if(correct){
+      box.textContent = play.answer;
+      box.classList.add("correct");
+      play.correctCount++;
+      play.streak++;
+      p.correct++; p.streak++;
+    }else{
+      box.textContent = timedOut ? "⏰" : (play.answer||"–");
+      box.classList.add("wrong");
+      play.streak = 0;
+      p.streak = 0;
+      speak("La respuesta era "+(q.a+q.b));
+    }
+    saveData();
+    document.getElementById("streak-pill").textContent = "racha "+play.streak+" 🔥";
+    setTimeout(()=>{
+      play.qIndex++;
+      renderQuestion();
+    }, correct ? 650 : 1300);
+  }
+
+  /* ---------- FIN DE NIVEL ---------- */
+  function finishLevel(){
+    const total = play.questions.length;
+    const ratio = play.correctCount/total;
+    let stars = 1;
+    if(ratio>=0.9) stars = 3;
+    else if(ratio>=0.7) stars = 2;
+    const completed = ratio>=0.5;
+    const prevStars = (data.levels[currentLevel.id] && data.levels[currentLevel.id].stars) || 0;
+    data.levels[currentLevel.id] = {
+      completed: completed || (data.levels[currentLevel.id]&&data.levels[currentLevel.id].completed),
+      stars: Math.max(stars, completed?stars:0, prevStars)
+    };
+    saveData();
+    document.getElementById("complete-title").textContent = completed ? "¡Nivel completado!" : "¡Casi lo tienes!";
+    document.getElementById("complete-stars").textContent = "★".repeat(stars)+"☆".repeat(3-stars);
+    document.getElementById("complete-msg").textContent =
+      play.correctCount+" de "+total+" sumas correctas.";
+    const nextBtn = document.getElementById("btn-next-level");
+    const hasNext = LEVELS.some(l=>l.id===currentLevel.id+1);
+    nextBtn.style.display = (completed && hasNext) ? "block" : "none";
+    speak(completed ? "¡Muy bien! Nivel completado" : "¡Sigue practicando!");
+    show("screen-complete");
+  }
+  document.getElementById("btn-next-level").addEventListener("click", ()=>{
+    const next = LEVELS.find(l=>l.id===currentLevel.id+1);
+    if(next) openPreview(next.id); else { renderHome(); show("screen-home"); }
+  });
+  document.getElementById("btn-retry-level").addEventListener("click", ()=> openPreview(currentLevel.id));
+  document.getElementById("btn-complete-home").addEventListener("click", ()=>{ renderHome(); show("screen-home"); });
+
+  /* ---------- MAPA DE SUMAS ---------- */
+  function renderMap(){
+    const grid = document.getElementById("map-grid");
+    grid.innerHTML = "";
+    const corner = document.createElement("div");
+    corner.className = "map-cell head";
+    corner.textContent = "+";
+    grid.appendChild(corner);
+    for(let b=1;b<=9;b++){
+      const h = document.createElement("div");
+      h.className = "map-cell head";
+      h.textContent = b;
+      grid.appendChild(h);
+    }
+    for(let a=1;a<=9;a++){
+      const rowHead = document.createElement("div");
+      rowHead.className = "map-cell head";
+      rowHead.textContent = a;
+      grid.appendChild(rowHead);
+      for(let b=1;b<=9;b++){
+        const cell = document.createElement("div");
+        let cls = "map-cell";
+        if(isMastered(a,b)) cls += " mastered";
+        else if(isStarted(a,b)) cls += " progress";
+        cell.className = cls;
+        cell.textContent = a+b;
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  /* ---------- INICIO ---------- */
+  renderHome();
+})();
+</script>
+</body>
+</html>
