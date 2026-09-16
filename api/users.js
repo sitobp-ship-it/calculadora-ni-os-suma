@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
       name: rec.fields.Nombre || '',
       avatar: rec.fields.Avatar || '🙂',
       coins: rec.fields.Monedas || 0,
-      level: rec.fields.NivelGlobal || 0,
+      level: rec.fields['Nivel Global'] || 0,
       medals: rec.fields.Medallas || 0,
     })).filter((u) => u.name);
 
