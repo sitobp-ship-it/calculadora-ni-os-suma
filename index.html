@@ -561,16 +561,16 @@ function userToAirtableFields(u){
     perfectLevels:u.perfectLevels,perfectGroups:u.perfectGroups,days:u.days,maxDayStreak:u.maxDayStreak,
     flags:u.flags,perfectRun:u.perfectRun,buys:u.buys,created:u.created};
   return {
-    Nombre:u.name, Avatar:u.avatar, Monedas:u.coins, MonedasTotal:u.coinsTotal,
-    NivelGlobal:globalLevel(u), Medallas:u.medals.length,
-    Datos:JSON.stringify(datos), UltimaVez:new Date().toISOString()
+    Nombre:u.name, Avatar:u.avatar, Monedas:u.coins, "Monedas Total":u.coinsTotal,
+    "Nivel Global":globalLevel(u), Medallas:u.medals.length,
+    Datos:JSON.stringify(datos)
   };
 }
 function userFromAirtableRecord(rec){
   var f=rec.fields||{};
   var datos={};
   try{datos=f.Datos?JSON.parse(f.Datos):{};}catch(e){datos={};}
-  var u=Object.assign({name:f.Nombre||"",avatar:f.Avatar||"🙂",coins:f.Monedas||0,coinsTotal:f.MonedasTotal||0},datos);
+  var u=Object.assign({name:f.Nombre||"",avatar:f.Avatar||"🙂",coins:f.Monedas||0,coinsTotal:f["Monedas Total"]||0},datos);
   u.airtableId=rec.id;
   migrateUser(u);
   return u;
@@ -588,13 +588,13 @@ async function apiGetUser(id){
   return data;
 }
 async function apiCreateUser(fields){
-  var r=await fetch('/api/user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+  var r=await fetch('/api/user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields}),keepalive:true});
   var data=await r.json();
   if(!r.ok)throw new Error((data&&data.error)||'error');
   return data;
 }
 async function apiUpdateUser(id,fields){
-  var r=await fetch('/api/user?id='+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+  var r=await fetch('/api/user?id='+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields}),keepalive:true});
   var data=await r.json();
   if(!r.ok)throw new Error((data&&data.error)||'error');
   return data;
@@ -606,6 +606,12 @@ function saveUser(){
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(syncUserNow,1500);
 }
+function flushSyncNow(){
+  if(!U)return;
+  clearTimeout(_syncTimer);
+  syncUserNow();
+}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flushSyncNow();});
 async function syncUserNow(){
   if(!U)return;
   try{
@@ -1052,7 +1058,7 @@ $("n-sound").addEventListener("click",function(){
   modal(DB.sound?"🔊":"🔇","Sonido "+(DB.sound?"activado":"desactivado"),
     DB.sound?"Se leerán las sumas en voz alta y sonarán los aciertos.":"Todo en silencio.");
 });
-$("tb-user").addEventListener("click",function(){selectedUserId=U?U.airtableId:null;initUserSelection();show("s-user");});
+$("tb-user").addEventListener("click",function(){flushSyncNow();selectedUserId=U?U.airtableId:null;initUserSelection();show("s-user");});
 document.addEventListener("click",function(e){
   var t=e.target.getAttribute&&e.target.getAttribute("data-back");
   if(t){if(t==="s-home"&&U)renderHome();show(t);}
@@ -1279,7 +1285,7 @@ function resolve(ok,timedOut){
 }
 $("b-quit").addEventListener("click",function(){
   if(P)clearInterval(P.timer);
-  saveUser();renderHome();show("s-home");
+  saveUser();flushSyncNow();renderHome();show("s-home");
 });
 function endLevel(){
   clearInterval(P.timer);
@@ -1310,7 +1316,7 @@ function endLevel(){
   });
   U.perfectGroups=pg;
   var gained=checkMedals();
-  saveUser();
+  saveUser();flushSyncNow();
   var ph=perfect?pickPhrase(PHRASES_PERFECT):(completed?pickPhrase(PHRASES_OK):pickPhrase(PHRASES_SOSO));
   $("dn-emoji").textContent=ph.e;
   $("dn-title").textContent=ph.t;
